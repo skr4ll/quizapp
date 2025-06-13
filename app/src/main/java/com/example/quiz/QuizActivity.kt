@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
@@ -26,10 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp // Ensure this import is present
 import com.example.quiz.ui.theme.QuizTheme
 
 // more about activities: https://developer.android.com/guide/components/activities/intro-activities
@@ -39,6 +42,23 @@ class QuizActivity : ComponentActivity() {
     // to *remove* an already asked question, we delete it from the list
     // ref about mutable lists: https://stackoverflow.com/questions/33278869/how-do-i-initialize-kotlins-mutablelist-to-empty-mutablelist
     var questions = arrayListOf<Question>(
+        // https://www.youtube.com/watch?v=E58q1dTZa68
+        Question(
+            "Welches ist die Höchstgeschwindigkeit einer unbeladenen Schwalbe?",
+            "Was sind Schwalben?",
+            "Recht schnell für Vögel glaube ich",
+            "Eine europäische oder eine afrikanische Schwalbe?",
+            3
+        ),
+
+        Question(
+            "Welches ist deine Lieblingsfarbe?",
+            "Blau",
+            "Gelb",
+            "Blau ... nein, Gelb!",
+            3
+        ),
+
         Question(
             "Was ist die Hauptstadt von Australien?",
             "Sydney",
@@ -46,7 +66,55 @@ class QuizActivity : ComponentActivity() {
             "Canberra",
             3
         ),
-        Question("Wie viele Hauptstädte hat Südafrika?", "3", "2", "1", 1)
+        Question("Wie viele Hauptstädte hat Südafrika?", "3", "2", "1", 1),
+
+        Question(
+            "Welche Option ist die Beste?",
+            "Kotlin",
+            "React",
+            "Bier",
+            3
+        ),
+
+        Question(
+            "Ja juut woran hat et jelegen?",
+            "Das fragt man sich nachher natürlich immer woran et jelegen hat",
+            "Das ist natürlich immer so die Frage",
+            "Woran hat et jelegen? Ähh",
+            1    
+        ),
+
+        Question(
+            "Ey Mark, wer ist der coolste hier?",
+            "Du",
+            "Du Nich",
+            "Ich",
+            2
+        ),
+
+        Question(
+            "Gibt es hier eigentlich auch Bier?",
+            "Geh selber kaufen, Büdchen ist ums Eck",
+            "Na Freilich: feinstes Ötti, handwarm",
+            "Nur falls du alle Fragen richtig beantwortet hast",
+            2
+        ),
+
+        Question(
+            "Döner wieder 3€, wann?",
+            "Nur mit Zeitmaschine",
+            "Inflation Brudi Inflation, dies das",
+            "Dann nur noch homemade oder so",
+            3
+        ),
+
+        Question(
+            "Wie heißt die Hauptstadt von Assyrien?",
+            "Assur",
+            "Weiß ich nicht, da war ich noch nie",
+            "Assyr",
+            2
+        )
         // TODO: Finish the needed 8+ more Questions
     )
 
@@ -55,7 +123,7 @@ class QuizActivity : ComponentActivity() {
 
     // rounds ...
     // TODO: Set it up to 10 later
-    val rounds = 2
+    val rounds = 10
 
     // a normal score that is increased when a question was answered correctly
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,39 +147,45 @@ class QuizActivity : ComponentActivity() {
     @Composable
     @Preview
     fun QuizQuestion() {
-        var button1Colour = remember { mutableStateOf(Color.Unspecified) }
-        var button2Colour = remember { mutableStateOf(Color.Unspecified) }
-        var button3Colour = remember { mutableStateOf(Color.Unspecified) }
-        // refs for getting random list item:
-        // https://stackoverflow.com/questions/47850156/get-a-random-item-from-list-using-kotlin-streams
-        // https://developermemos.com/posts/random-list-item-kotlin
-        // https://www.techiedelight.com/randomly-select-an-item-from-a-list-in-kotlin/
-        // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/
-        // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/remove-at.html
+        val configuration = LocalConfiguration.current
+        val screenWidth = configuration.screenWidthDp
+        val screenHeight = configuration.screenHeightDp
+
+        // Define viewport-relative sizes
+        val fontSizeQuestion = (screenWidth * 0.05).sp // 5% of screen width in sp
+        val fontSizeAnswer = (screenWidth * 0.04).sp // 4% of screen width in sp
+        val buttonHeight = (screenHeight * 0.08).dp // 8% of screen height in dp
+        val spacerHeight = (screenHeight * 0.1).dp // 10% of screen height as spacer
+
+        var button1Colour = remember { mutableStateOf(Color.Gray) }
+        var button2Colour = remember { mutableStateOf(Color.Gray) }
+        var button3Colour = remember { mutableStateOf(Color.Gray) }
         var currentQuestion =
             remember { mutableStateOf(questions.removeAt((0 until questions.size).random())) }
         var answerGiven = remember { mutableIntStateOf(0) }
+        var round = remember { mutableIntStateOf(0) }
+        var buttonText = remember { mutableStateOf("Nächste Frage") }
 
-        var round = remember {mutableIntStateOf(0)}
-
-        var buttonText = remember { mutableStateOf("Next Question") }
-        // ref for color of buttons: https://stackoverflow.com/questions/64376333/background-color-on-button-in-jetpack-compose
         Column(
             modifier = Modifier
-                .padding(5.dp, 0.dp)
+                .padding(5.dp)
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(fontSize = 20.em, lineHeight = 1.em, text = "Quitz")
-            Column {
+            // Add a spacer to move the content down
+            Spacer(modifier = Modifier.height(spacerHeight))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = currentQuestion.value.question,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(10.dp, 0.dp),
-                    fontSize = 10.em,
-                    lineHeight = 1.em,
+                        .padding(10.dp),
+                    fontSize = fontSizeQuestion, // Use calculated sp value
                     textAlign = TextAlign.Center
                 )
                 Button(
@@ -134,15 +208,19 @@ class QuizActivity : ComponentActivity() {
                             round.intValue++
 
                             if (round.intValue == rounds) {
-                                buttonText.value = "Back Home"
+                                buttonText.value = "Hauptmenü"
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = button1Colour.value),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 5.dp)
+                        .height(buttonHeight)
                 ) {
                     Text(
-                        text = currentQuestion.value.answers[0]
+                        text = currentQuestion.value.answers[0],
+                        fontSize = fontSizeAnswer
                     )
                 }
                 Button(
@@ -165,15 +243,19 @@ class QuizActivity : ComponentActivity() {
                             round.intValue++
 
                             if (round.intValue == rounds) {
-                                buttonText.value = "Back Home"
+                                buttonText.value = "Hauptmenü"
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = button2Colour.value),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 5.dp)
+                        .height(buttonHeight)
                 ) {
                     Text(
-                        text = currentQuestion.value.answers[1]
+                        text = currentQuestion.value.answers[1],
+                        fontSize = fontSizeAnswer
                     )
                 }
                 Button(
@@ -196,40 +278,55 @@ class QuizActivity : ComponentActivity() {
                             round.intValue++
 
                             if (round.intValue == rounds) {
-                                buttonText.value = "Back Home"
+                                buttonText.value = "Hauptmenü"
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = button3Colour.value),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 5.dp)
+                        .height(buttonHeight)
                 ) {
                     Text(
-                        text = currentQuestion.value.answers[2]
+                        text = currentQuestion.value.answers[2],
+                        fontSize = fontSizeAnswer
                     )
                 }
             }
-            Text(text = "Played ${round.intValue} of $rounds rounds and won $currentScore")
-            Spacer(Modifier.size(0.dp))
+            Text(
+                text = "Du hast $currentScore von $rounds Fragen richtig beantwortet.",
+                textAlign = TextAlign.Center,
+                fontSize = fontSizeAnswer,
+                modifier = Modifier.padding(5.dp)
+            )
+            Spacer(Modifier.size(10.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(0.dp, 10.dp),
+                    .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                Button(onClick = {
-                    if (round.intValue <= rounds) {
-                        button1Colour.value = Color.Unspecified
-                        button2Colour.value = Color.Unspecified
-                        button3Colour.value = Color.Unspecified
-                        gameRound = true
-                        currentQuestion.value =
-                            questions.removeAt((0 until questions.size).random())
-                    } else {
-                        val intent = Intent(this@QuizActivity, MainActivity::class.java)
-                        startActivity(intent)
-                    }
-                }) { Text(text = buttonText.value) }
+                Button(
+                    onClick = {
+                        if (round.intValue < rounds) {
+                            button1Colour.value = Color.Gray
+                            button2Colour.value = Color.Gray
+                            button3Colour.value = Color.Gray
+
+                            gameRound = true
+                            currentQuestion.value =
+                                questions.removeAt((0 until questions.size).random())
+                        } else {
+                            val intent = Intent(this@QuizActivity, MainActivity::class.java)
+                            startActivity(intent)
+                        }
+                    },
+                    modifier = Modifier.height(buttonHeight) // Use viewport-relative button height
+                ) {
+                    Text(text = buttonText.value, fontSize = fontSizeAnswer)
+                }
             }
         }
     }
