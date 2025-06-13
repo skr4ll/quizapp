@@ -1,11 +1,10 @@
 package com.example.quiz
 
-import kotlin.random.Random
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +20,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Composer.Companion.Empty
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,14 +47,15 @@ class QuizActivity : ComponentActivity() {
             3
         ),
         Question("Wie viele Hauptstädte hat Südafrika?", "3", "2", "1", 1)
+        // TODO: Finish the needed 8+ more Questions
     )
 
     var gameRound = true
     var currentScore = 0
 
     // rounds ...
-    var round = 1
-    val rounds = 10
+    // TODO: Set it up to 10 later
+    val rounds = 2
 
     // a normal score that is increased when a question was answered correctly
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,6 +92,9 @@ class QuizActivity : ComponentActivity() {
             remember { mutableStateOf(questions.removeAt((0 until questions.size).random())) }
         var answerGiven = remember { mutableIntStateOf(0) }
 
+        var round = remember {mutableIntStateOf(0)}
+
+        var buttonText = remember { mutableStateOf("Next Question") }
         // ref for color of buttons: https://stackoverflow.com/questions/64376333/background-color-on-button-in-jetpack-compose
         Column(
             modifier = Modifier
@@ -127,9 +129,13 @@ class QuizActivity : ComponentActivity() {
                                 button2Colour.value = Color.Green
                             }
                             if (currentQuestion.value.correctAnswer == 3) {
-                                button2Colour.value = Color.Green
+                                button3Colour.value = Color.Green
                             }
-                            round++
+                            round.intValue++
+
+                            if (round.intValue == rounds) {
+                                buttonText.value = "Back Home"
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = button1Colour.value),
@@ -154,9 +160,13 @@ class QuizActivity : ComponentActivity() {
                                 button1Colour.value = Color.Green
                             }
                             if (currentQuestion.value.correctAnswer == 3) {
-                                button2Colour.value = Color.Green
+                                button3Colour.value = Color.Green
                             }
-                            round++
+                            round.intValue++
+
+                            if (round.intValue == rounds) {
+                                buttonText.value = "Back Home"
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = button2Colour.value),
@@ -183,7 +193,11 @@ class QuizActivity : ComponentActivity() {
                             if (currentQuestion.value.correctAnswer == 2) {
                                 button2Colour.value = Color.Green
                             }
-                            round++
+                            round.intValue++
+
+                            if (round.intValue == rounds) {
+                                buttonText.value = "Back Home"
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = button3Colour.value),
@@ -194,7 +208,7 @@ class QuizActivity : ComponentActivity() {
                     )
                 }
             }
-            Text(text = "Played $round of $rounds rounds and won $currentScore")
+            Text(text = "Played ${round.intValue} of $rounds rounds and won $currentScore")
             Spacer(Modifier.size(0.dp))
             Row(
                 modifier = Modifier
@@ -204,15 +218,18 @@ class QuizActivity : ComponentActivity() {
                 horizontalArrangement = Arrangement.End
             ) {
                 Button(onClick = {
-                    if (round <= rounds) {
+                    if (round.intValue <= rounds) {
                         button1Colour.value = Color.Unspecified
                         button2Colour.value = Color.Unspecified
                         button3Colour.value = Color.Unspecified
                         gameRound = true
                         currentQuestion.value =
                             questions.removeAt((0 until questions.size).random())
+                    } else {
+                        val intent = Intent(this@QuizActivity, MainActivity::class.java)
+                        startActivity(intent)
                     }
-                }) { Text(text = "Next Question") }
+                }) { Text(text = buttonText.value) }
             }
         }
     }
